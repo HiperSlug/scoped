@@ -1,45 +1,89 @@
 use bevy::prelude::*;
+use rand::seq::IndexedRandom;
 
 fn main() {
     App::new()
-        .add_systems(Startup, add_entities)
-        .add_systems(Update, (hello_world, (change_position, print_position).chain()))
+        .add_plugins(DefaultPlugins)
+        .add_plugins(HelloPlugin)
         .run();
-    println!("Hello, world!");
 }
 
-fn hello_world() {
-    println!("SYSTEM MESSAGE: Hello, world!");
-}
+pub struct HelloPlugin;
 
-// Components
-#[derive(Component)]
-struct Position {
-    x: f64,
-    y: f64,
-}
-
-#[derive(Component)]
-struct Entity;
-
-
-// Systems
-fn add_entities(mut commands: Commands) {
-    commands.spawn((Entity, Position { x: 1.0, y: 2.0 } ));
-    commands.spawn((Entity, Position { x: 2.0, y: 3.0 } ));
-    commands.spawn((Entity, Position { x: 3.0, y: 4.0 } ));
-    commands.spawn((Entity, Position { x: 4.0, y: 5.0 } ));
-}
-
-fn print_position(query: Query<&Position, With<Entity>>) {
-    for position in &query {
-        println!("position: {} {}", position.x, position.y);
+impl Plugin for HelloPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, add_people)
+            .add_systems(Update, (change_name, say_hello).chain())
+            .insert_resource(GreetTimer(Timer::from_seconds(2.0, TimerMode::Repeating)));
     }
 }
 
-fn change_position(mut query: Query<&mut Position, With<Entity>>) {
-    for mut pos in &mut query {
-        pos.x += 1.0;
-        pos.y += 1.0;
+fn add_people(mut commands: Commands) {
+    commands.spawn((
+        Person,
+        Name {
+            title: Title::random(),
+            name: String::from("Bill"),
+        },
+    ));
+}
+
+#[derive(Component)]
+struct Person;
+
+#[derive(Component)]
+struct Name {
+    title: Title,
+    name: String,
+}
+
+impl std::fmt::Display for Name {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.title, self.name)
+    }
+}
+
+#[derive(Clone, Copy)]
+enum Title {
+    Mr,
+    Ms,
+    Mrs,
+    Lord,
+}
+
+impl std::fmt::Display for Title {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Self::Mr => "Mr.",
+            Self::Mrs => "Mrs.",
+            Self::Lord => "Lord",
+            Self::Ms => "Ms",
+        };
+        write!(f, "{s}")
+    }
+}
+
+impl Title {
+    fn random() -> Self {
+        let choices = [Title::Mr, Title::Mrs, Title::Lord, Title::Ms];
+        let mut rng = rand::rng();
+        *choices.choose(&mut rng).unwrap()
+    }
+}
+
+fn say_hello(time: Res<Time>, mut timer: ResMut<GreetTimer>, query: Query<&Name, With<Person>>) {
+    if timer.0.tick(time.delta()).just_finished() {
+        for name in &query {
+            println!("Hello {name}!");
+        }
+    }
+}
+
+#[derive(Resource)]
+struct GreetTimer(Timer);
+
+fn change_name(mut query: Query<&mut Name, With<Person>>) {
+    for mut name in &mut query {
+        name.title = Title::random();
     }
 }
