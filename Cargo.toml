@@ -2,7 +2,7 @@
 resolver = "3"
 
 members = [
-	"main",
+	"main", "snake",
 ]
 
 
@@ -13,4 +13,5 @@ opt-level = 1
 opt-level = 3
 
 [workspace.dependencies]
-bevy = { version = "0.16.1", features = ["dynamic_linking"] }
+bevy = { version = "0.16.1", features = ["dynamic_linking"] } # DEV
+# bevy = { version = "0.16.1" } # RELEASE
