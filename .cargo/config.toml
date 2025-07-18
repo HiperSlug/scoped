@@ -4,7 +4,7 @@ linker = "rust-lld.exe"
 [target.wasm32-unknown-unknown]
 runner = "wasm-server-runner"
 
-[build]
+[build.release]
 rustflags = ["--cfg", "getrandom_backend=\"wasm_js\""]
 
 [alias]
